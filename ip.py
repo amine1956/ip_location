@@ -27,8 +27,12 @@ def get_location(ip: str) -> dict:
         return {"error": str(e)}
 
 # Route unique pour afficher la carte et la liste des utilisateurs
-@app.get("/", response_class=HTMLResponse)
+@app.get("/users", response_class=HTMLResponse)
 async def client_location(request: Request):
+
+    return templates.TemplateResponse("map.html", {"request": request,"users": user_data})
+@app.get("/", response_class=HTMLResponse)
+async def game(request: Request):
     ip = get_client_ip(request)
     location_data = get_location(ip)
 
@@ -42,8 +46,12 @@ async def client_location(request: Request):
     }
 
     user_data.append(user_info)  # Ajouter les données à la liste globale
+    print(user_data)
+    return templates.TemplateResponse("index.html", {"request": request, "users": user_data})
 
-    return templates.TemplateResponse("map.html", {"request": request, "location": location_data, "users": user_data})
+
+
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

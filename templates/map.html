@@ -3,29 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Information des Personnes - Style Hackers</title>
+    <title>Informations des Utilisateurs</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
-        /* Fond et body */
         body {
             background-color: #131417;
             color: #00FF41;
             font-family: 'Courier New', Courier, monospace;
             font-size: 1.1rem;
+            overflow-x: hidden;
+            animation: scrollAnimation 20s linear infinite;
         }
 
-        /* Container de la table */
-        .table-container {
-            width: 90%;
-            margin: 50px auto;
-            background-color: #1e1e1e;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 255, 65, 0.5);
-            overflow: hidden;
+        @keyframes scrollAnimation {
+            0% { background-position: 0 0; }
+            100% { background-position: 100% 0; }
         }
 
-        /* Titre de la table */
         .table-title {
             text-align: center;
             font-size: 2rem;
@@ -34,16 +28,43 @@
             color: #00FF41;
             text-transform: uppercase;
             letter-spacing: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            width: 0;
+            animation: typing 4s steps(40) 1s forwards, blinkCaret 0.75s step-end infinite;
         }
 
-        /* Stylisation de la table */
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes blinkCaret {
+            50% { border-color: transparent; }
+        }
+
+        .table-container {
+            width: 90%;
+            margin: 50px auto;
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 255, 65, 0.5);
+            overflow: hidden;
+            animation: fadeInTable 3s ease-in-out;
+        }
+
+        @keyframes fadeInTable {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
             color: #00FF41;
         }
 
-        /* En-têtes de la table */
         th {
             padding: 12px;
             background-color: #222222;
@@ -55,7 +76,6 @@
             border-bottom: 2px solid #00FF41;
         }
 
-        /* Lignes de la table */
         td {
             padding: 12px;
             border-bottom: 1px solid #333333;
@@ -63,43 +83,53 @@
             font-size: 1rem;
         }
 
-        /* Effet de survol sur les lignes */
         tr:hover {
             background-color: #333333;
         }
 
-        /* Animation de survol */
-        tr:hover td {
-            color: #00FF41;
-            transform: scale(1.05);
-            transition: 0.3s ease-in-out;
+        .hacker-icon {
+            text-align: center;
+            margin-bottom: 20px;
+            animation: flicker 1s infinite, rotate1 15s linear infinite;
         }
 
-        /* Bordures de la table */
-        tr:first-child th {
-            border-top-left-radius: 10px;
-            border-top-right-radius: 10px;
+        .svg-icon {
+            width: 100px;
+            height: 100px;
+            animation: rotate1 15s linear infinite, flicker 1s infinite;
         }
 
-        tr:last-child td {
-            border-bottom-left-radius: 10px;
-            border-bottom-right-radius: 10px;
+        @keyframes rotate1 {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
-        /* Design de la table en mode full screen */
-        .table-container {
-            max-width: 100%;
-            margin-top: 50px;
+        @keyframes flicker {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        .svg-icon:hover {
+            transform: scale(1.2) rotate(360deg);
+            transition: all 0.5s ease-in-out;
         }
     </style>
 </head>
 <body>
 
-    <!-- Container de la table -->
-    <div class="table-container">
-        <h2 class="table-title">Informations des Personnes</h2>
+    <!-- Image SVG Hacker Icon -->
+    <div class="hacker-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="50" height="50" fill="#00FF41" class="svg-icon">
+            <g>
+                <path d="M32,3C16.5,3,4,15.5,4,31s12.5,28,28,28,28-12.5,28-28S47.5,3,32,3ZM32,56c-13.2,0-24-10.8-24-24S18.8,8,32,8s24,10.8,24,24-10.8,24-24,24ZM27.2,19h9.6c1.6,0,2.8,1.3,2.8,2.8v9.6c0,1.6-1.3,2.8-2.8,2.8h-9.6c-1.6,0-2.8-1.3-2.8-2.8v-9.6c0-1.6,1.3-2.8,2.8-2.8Z"/>
+            </g>
+        </svg>
+    </div>
 
-        <!-- Table -->
+    <!-- Table of Users -->
+    <div class="table-container">
+        <h2 class="table-title">Informations des Utilisateurs</h2>
         <table>
             <thead>
                 <tr>
@@ -112,13 +142,13 @@
             </thead>
             <tbody>
                 {% for user in users %}
-                    <tr>
-                        <td>{{ user.ip }}</td>
-                        <td>{{ user.city }}</td>
-                        <td>{{ user.country }}</td>
-                        <td>{{ user.lat }}</td>
-                        <td>{{ user.lon }}</td>
-                    </tr>
+                <tr>
+                    <td>{{ user.ip }}</td>
+                    <td>{{ user.city }}</td>
+                    <td>{{ user.country }}</td>
+                    <td>{{ user.lat }}</td>
+                    <td>{{ user.lon }}</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>

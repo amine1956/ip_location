@@ -4,85 +4,103 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Client Location Map</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/topojson@3"></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body {
+            background-color: #1a202c; /* Dark background for the hacker look */
+        }
+        .hacker-font {
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+        }
+        #map {
+            height: 500px;
+        }
+        .table-container {
+            margin-top: 20px;
+            background-color: #2d3748; /* Dark background for the table */
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .table-header {
+            background-color: #4a5568;
+        }
+        .table-row {
+            border-top: 1px solid #718096;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<body class="flex flex-col items-center justify-center min-h-screen text-white">
 
-    <div class="w-full max-w-xl p-6 bg-white rounded-lg shadow-lg">
-        <h2 class="text-2xl font-bold text-center mb-4 text-gray-800">Client Location</h2>
+    <!-- Header with the hacker font -->
+    <h2 class="hacker-font text-3xl font-bold mb-6">Client Location Map</h2>
 
-        <!-- Pie Chart -->
-        <h3 class="text-lg font-semibold mb-4">Location Distribution</h3>
-        <canvas id="pieChart" class="w-full h-64 mb-6"></canvas>
+    <!-- The map container -->
+    <div id="map" class="w-full max-w-4xl mb-6"></div>
 
-        <!-- Data Table -->
-        <h3 class="text-lg font-semibold mb-4">Client Location Data</h3>
-        <table class="min-w-full bg-white shadow-md rounded-lg">
-            <thead class="bg-gray-100">
+    <!-- Users Table Section -->
+    <div class="table-container w-full max-w-4xl">
+        <h3 class="hacker-font text-2xl font-bold mb-4">Users Information</h3>
+
+        <table class="min-w-full">
+            <thead class="table-header text-green-500">
                 <tr>
-                    <th class="py-2 px-4 text-left">Field</th>
-                    <th class="py-2 px-4 text-left">Value</th>
+                    <th class="py-2 px-4 text-left">IP</th>
+                    <th class="py-2 px-4 text-left">City</th>
+                    <th class="py-2 px-4 text-left">Country</th>
+                    <th class="py-2 px-4 text-left">Latitude</th>
+                    <th class="py-2 px-4 text-left">Longitude</th>
                 </tr>
             </thead>
-            <tbody>
-                <tr>
-                    <td class="py-2 px-4">City</td>
-                    <td class="py-2 px-4">{{ location.city }}</td>
-                </tr>
-                <tr>
-                    <td class="py-2 px-4">Country</td>
-                    <td class="py-2 px-4">{{ location.country }}</td>
-                </tr>
-                <tr>
-                    <td class="py-2 px-4">Latitude</td>
-                    <td class="py-2 px-4">{{ location.lat }}</td>
-                </tr>
-                <tr>
-                    <td class="py-2 px-4">Longitude</td>
-                    <td class="py-2 px-4">{{ location.lon }}</td>
-                </tr>
+            <tbody id="userTable">
+                <!-- Dynamically generated rows will appear here -->
             </tbody>
         </table>
     </div>
 
+    <!-- JS for Leaflet Map and User Data -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        // Renommer la variable pour éviter le conflit
-        const clientLocation = {{ location | tojson }};
-        console.log("Location data:", clientLocation);  // Pour vérifier les données de localisation
+        // Extract location data from Python FastAPI template
+        const location = {{ location | tojson }};
+        const users = {{ users | tojson }};  // Assuming 'users' is passed from FastAPI
 
-        // Données pour le pie chart (répartition fictive, vous pouvez ajuster en fonction des besoins)
-        const pieData = {
-            labels: ['Latitude', 'Longitude'],
-            datasets: [{
-                data: [clientLocation.lat, clientLocation.lon],
-                backgroundColor: ['#36A2EB', '#FF6384'],
-                hoverBackgroundColor: ['#2C8CDB', '#F07272']
-            }]
-        };
+        // Initialize the map if location data exists
+        if (location && location.lat && location.lon) {
+            const map = L.map('map').setView([location.lat, location.lon], 10);
 
-        // Configuration du pie chart pour afficher la répartition
-        const pieCtx = document.getElementById('pieChart').getContext('2d');
-        new Chart(pieCtx, {
-            type: 'pie',
-            data: pieData,
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'top',
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(tooltipItem) {
-                                return tooltipItem.label + ': ' + tooltipItem.raw.toFixed(2);
-                            }
-                        }
-                    }
-                }
-            }
-        });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            L.marker([location.lat, location.lon])
+                .addTo(map)
+                .bindPopup(`<b>Location:</b> ${location.city}, ${location.country}`)
+                .openPopup();
+        } else {
+            document.getElementById('map').innerHTML = "<p class='hacker-font'>Unable to retrieve location data.</p>";
+        }
+
+        // Populate user table dynamically
+        const userTable = document.getElementById('userTable');
+        if (users && users.length > 0) {
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                row.classList.add('table-row');
+                row.innerHTML = `
+                    <td class="py-2 px-4 text-green-400">${user.ip}</td>
+                    <td class="py-2 px-4">${user.city}</td>
+                    <td class="py-2 px-4">${user.country}</td>
+                    <td class="py-2 px-4">${user.lat}</td>
+                    <td class="py-2 px-4">${user.lon}</td>
+                `;
+                userTable.appendChild(row);
+            });
+        } else {
+            userTable.innerHTML = "<tr><td colspan='5' class='py-2 px-4 text-center text-red-500'>No users found.</td></tr>";
+        }
     </script>
 </body>
 </html>

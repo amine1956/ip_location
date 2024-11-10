@@ -5,7 +5,7 @@ import requests
 import uvicorn
 
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")  # Directory for HTML templates
+templates = Jinja2Templates(directory="templates")
 
 def get_client_ip(request: Request) -> str:
     client_ip = request.headers.get("X-Envoy-External-Address")
@@ -27,7 +27,6 @@ def get_location(ip: str) -> dict:
 async def client_location(request: Request):
     ip = get_client_ip(request)
     location_data = get_location(ip)
-    print(location_data)  # Affiche les données pour débogage
     return templates.TemplateResponse("map.html", {"request": request, "location": location_data})
 
 if __name__ == "__main__":

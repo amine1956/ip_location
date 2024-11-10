@@ -4,38 +4,77 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Client Location Map</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-geo@3"></script>
+    <script src="https://unpkg.com/topojson@3"></script>
     <style>
-        #map { height: 500px; width: 100%; }
+        #mapChart {
+            width: 80%;
+            max-width: 800px;
+            margin: auto;
+        }
     </style>
 </head>
 <body>
     <h2>Client Location Map</h2>
-    <div id="map"></div>
+    <canvas id="mapChart"></canvas>
 
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        // Extract the location data from the FastAPI response
-        const location = {{ location | tojson }};
+        // Renommer la variable pour éviter le conflit
+        const clientLocation = {{ location | tojson }};
+        console.log("Location data:", clientLocation);  // Pour vérifier les données de localisation
 
-        if (location && location.lat && location.lon) {
-            // Initialize the map centered on the client's location
-            const map = L.map('map').setView([location.lat, location.lon], 10);
+        // Charger le fond de carte avec Chart.js et Chart Geo
+        fetch("https://unpkg.com/world-atlas/countries-110m.json")
+            .then(response => response.json())
+            .then(data => {
+                // Vérification de l'objet countries pour s'assurer qu'il existe
+                if (data && data.objects && data.objects.countries) {
+                    const countries = ChartGeo.topojson.feature(data, data.objects.countries).features;
 
-            // Add the OpenStreetMap tiles
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
-
-            // Add a marker for the client's location
-            L.marker([location.lat, location.lon])
-                .addTo(map)
-                .bindPopup(`<b>Location:</b> ${location.city}, ${location.country}`)
-                .openPopup();
-        } else {
-            document.getElementById('map').innerHTML = "<p>Unable to retrieve location data.</p>";
-        }
+                    // Configuration du chart pour afficher la carte avec le point de localisation du client
+                    const ctx = document.getElementById('mapChart').getContext('2d');
+                    new Chart(ctx, {
+                        type: 'bubbleMap',
+                        data: {
+                            labels: ['Client Location'],
+                            datasets: [{
+                                label: 'Client Location',
+                                data: [{
+                                    latitude: clientLocation.lat,
+                                    longitude: clientLocation.lon,
+                                    radius: 10
+                                }],
+                                backgroundColor: 'red',
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(tooltipItem) {
+                                            return `Location: ${clientLocation.city}, ${clientLocation.country}`;
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                xy: {
+                                    projection: 'geoEqualEarth' // Utilise une projection "Equal Earth"
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    console.error("Erreur : Impossible de charger les données des pays.");
+                }
+            })
+            .catch(error => {
+                document.getElementById('mapChart').innerHTML = "<p>Unable to load map data.</p>";
+                console.error("Error loading map data:", error);
+            });
     </script>
 </body>
 </html>

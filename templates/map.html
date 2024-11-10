@@ -5,76 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Client Location Map</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-geo@3"></script>
     <script src="https://unpkg.com/topojson@3"></script>
-    <style>
-        #mapChart {
-            width: 80%;
-            max-width: 800px;
-            margin: auto;
-        }
-    </style>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
-    <h2>Client Location Map</h2>
-    <canvas id="mapChart"></canvas>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-xl p-6 bg-white rounded-lg shadow-lg">
+        <h2 class="text-2xl font-bold text-center mb-4 text-gray-800">Client Location</h2>
+
+        <!-- Pie Chart -->
+        <h3 class="text-lg font-semibold mb-4">Location Distribution</h3>
+        <canvas id="pieChart" class="w-full h-64 mb-6"></canvas>
+
+        <!-- Data Table -->
+        <h3 class="text-lg font-semibold mb-4">Client Location Data</h3>
+        <table class="min-w-full bg-white shadow-md rounded-lg">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="py-2 px-4 text-left">Field</th>
+                    <th class="py-2 px-4 text-left">Value</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="py-2 px-4">City</td>
+                    <td class="py-2 px-4">{{ location.city }}</td>
+                </tr>
+                <tr>
+                    <td class="py-2 px-4">Country</td>
+                    <td class="py-2 px-4">{{ location.country }}</td>
+                </tr>
+                <tr>
+                    <td class="py-2 px-4">Latitude</td>
+                    <td class="py-2 px-4">{{ location.lat }}</td>
+                </tr>
+                <tr>
+                    <td class="py-2 px-4">Longitude</td>
+                    <td class="py-2 px-4">{{ location.lon }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
     <script>
         // Renommer la variable pour éviter le conflit
         const clientLocation = {{ location | tojson }};
         console.log("Location data:", clientLocation);  // Pour vérifier les données de localisation
 
-        // Charger le fond de carte avec Chart.js et Chart Geo
-        fetch("https://unpkg.com/world-atlas/countries-110m.json")
-            .then(response => response.json())
-            .then(data => {
-                // Vérification de l'objet countries pour s'assurer qu'il existe
-                if (data && data.objects && data.objects.countries) {
-                    const countries = ChartGeo.topojson.feature(data, data.objects.countries).features;
+        // Données pour le pie chart (répartition fictive, vous pouvez ajuster en fonction des besoins)
+        const pieData = {
+            labels: ['Latitude', 'Longitude'],
+            datasets: [{
+                data: [clientLocation.lat, clientLocation.lon],
+                backgroundColor: ['#36A2EB', '#FF6384'],
+                hoverBackgroundColor: ['#2C8CDB', '#F07272']
+            }]
+        };
 
-                    // Configuration du chart pour afficher la carte avec le point de localisation du client
-                    const ctx = document.getElementById('mapChart').getContext('2d');
-                    new Chart(ctx, {
-                        type: 'bubbleMap',
-                        data: {
-                            labels: ['Client Location'],
-                            datasets: [{
-                                label: 'Client Location',
-                                data: [{
-                                    latitude: clientLocation.lat,
-                                    longitude: clientLocation.lon,
-                                    radius: 10
-                                }],
-                                backgroundColor: 'red',
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(tooltipItem) {
-                                            return `Location: ${clientLocation.city}, ${clientLocation.country}`;
-                                        }
-                                    }
-                                }
-                            },
-                            scales: {
-                                xy: {
-                                    projection: 'geoEqualEarth' // Utilise une projection "Equal Earth"
-                                }
+        // Configuration du pie chart pour afficher la répartition
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'pie',
+            data: pieData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return tooltipItem.label + ': ' + tooltipItem.raw.toFixed(2);
                             }
                         }
-                    });
-                } else {
-                    console.error("Erreur : Impossible de charger les données des pays.");
+                    }
                 }
-            })
-            .catch(error => {
-                document.getElementById('mapChart').innerHTML = "<p>Unable to load map data.</p>";
-                console.error("Error loading map data:", error);
-            });
+            }
+        });
     </script>
 </body>
 </html>

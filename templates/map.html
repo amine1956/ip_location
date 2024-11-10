@@ -3,104 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Client Location Map</title>
+    <title>Information des Personnes - Style Hackers</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
+        /* Fond et body */
         body {
-            background-color: #1a202c; /* Dark background for the hacker look */
+            background-color: #131417;
+            color: #00FF41;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1rem;
         }
-        .hacker-font {
-            font-family: 'Courier New', monospace;
-            color: #00ff00;
-        }
-        #map {
-            height: 500px;
-        }
+
+        /* Container de la table */
         .table-container {
-            margin-top: 20px;
-            background-color: #2d3748; /* Dark background for the table */
+            width: 90%;
+            margin: 50px auto;
+            background-color: #1e1e1e;
             padding: 20px;
             border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 255, 65, 0.5);
+            overflow: hidden;
         }
-        .table-header {
-            background-color: #4a5568;
+
+        /* Titre de la table */
+        .table-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 30px;
+            color: #00FF41;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
-        .table-row {
-            border-top: 1px solid #718096;
+
+        /* Stylisation de la table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #00FF41;
+        }
+
+        /* En-têtes de la table */
+        th {
+            padding: 12px;
+            background-color: #222222;
+            text-align: left;
+            font-size: 1.25rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #00FF41;
+        }
+
+        /* Lignes de la table */
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #333333;
+            text-align: left;
+            font-size: 1rem;
+        }
+
+        /* Effet de survol sur les lignes */
+        tr:hover {
+            background-color: #333333;
+        }
+
+        /* Animation de survol */
+        tr:hover td {
+            color: #00FF41;
+            transform: scale(1.05);
+            transition: 0.3s ease-in-out;
+        }
+
+        /* Bordures de la table */
+        tr:first-child th {
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+
+        tr:last-child td {
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+        }
+
+        /* Design de la table en mode full screen */
+        .table-container {
+            max-width: 100%;
+            margin-top: 50px;
         }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen text-white">
+<body>
 
-    <!-- Header with the hacker font -->
-    <h2 class="hacker-font text-3xl font-bold mb-6">Client Location Map</h2>
+    <!-- Container de la table -->
+    <div class="table-container">
+        <h2 class="table-title">Informations des Personnes</h2>
 
-    <!-- The map container -->
-    <div id="map" class="w-full max-w-4xl mb-6"></div>
-
-    <!-- Users Table Section -->
-    <div class="table-container w-full max-w-4xl">
-        <h3 class="hacker-font text-2xl font-bold mb-4">Users Information</h3>
-
-        <table class="min-w-full">
-            <thead class="table-header text-green-500">
+        <!-- Table -->
+        <table>
+            <thead>
                 <tr>
-                    <th class="py-2 px-4 text-left">IP</th>
-                    <th class="py-2 px-4 text-left">City</th>
-                    <th class="py-2 px-4 text-left">Country</th>
-                    <th class="py-2 px-4 text-left">Latitude</th>
-                    <th class="py-2 px-4 text-left">Longitude</th>
+                    <th>IP</th>
+                    <th>Ville</th>
+                    <th>Pays</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
                 </tr>
             </thead>
-            <tbody id="userTable">
-                <!-- Dynamically generated rows will appear here -->
+            <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td>{{ user.ip }}</td>
+                        <td>{{ user.city }}</td>
+                        <td>{{ user.country }}</td>
+                        <td>{{ user.lat }}</td>
+                        <td>{{ user.lon }}</td>
+                    </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <!-- JS for Leaflet Map and User Data -->
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script>
-        // Extract location data from Python FastAPI template
-        const location = {{ location | tojson }};
-        const users = {{ users | tojson }};  // Assuming 'users' is passed from FastAPI
-
-        // Initialize the map if location data exists
-        if (location && location.lat && location.lon) {
-            const map = L.map('map').setView([location.lat, location.lon], 10);
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
-
-            L.marker([location.lat, location.lon])
-                .addTo(map)
-                .bindPopup(`<b>Location:</b> ${location.city}, ${location.country}`)
-                .openPopup();
-        } else {
-            document.getElementById('map').innerHTML = "<p class='hacker-font'>Unable to retrieve location data.</p>";
-        }
-
-        // Populate user table dynamically
-        const userTable = document.getElementById('userTable');
-        if (users && users.length > 0) {
-            users.forEach(user => {
-                const row = document.createElement('tr');
-                row.classList.add('table-row');
-                row.innerHTML = `
-                    <td class="py-2 px-4 text-green-400">${user.ip}</td>
-                    <td class="py-2 px-4">${user.city}</td>
-                    <td class="py-2 px-4">${user.country}</td>
-                    <td class="py-2 px-4">${user.lat}</td>
-                    <td class="py-2 px-4">${user.lon}</td>
-                `;
-                userTable.appendChild(row);
-            });
-        } else {
-            userTable.innerHTML = "<tr><td colspan='5' class='py-2 px-4 text-center text-red-500'>No users found.</td></tr>";
-        }
-    </script>
 </body>
 </html>
